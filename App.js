@@ -15,12 +15,16 @@ import {
     TextInput,
     TouchableWithoutFeedback,
     ToastAndroid,
-    Linking
+    Linking,
+    NetInfo
 } from 'react-native';
 import Tts from 'react-native-tts';
 import SwiperFlatList from 'react-native-swiper-flatlist';
 import {AdMobBanner} from "react-native-admob";
+import AudioPlayer from 'react-native-play-audio';
+
 var {height, width} = Dimensions.get('window');
+var hindiWords = null;
 
 export default class App extends Component<{}> {
     constructor(props) {
@@ -225,22 +229,29 @@ export default class App extends Component<{}> {
 
     searchNumber = (n) => {
         if (!isNaN(n)) {
-            if (n.length < 15){
-                let num = Number(n);
-                this.setState({searchNumber: n});
-                if (num) {
+            if (n % 1 === 0) {
+                if (n.length < 15) {
+                    let num = Number(n);
                     this.setState({searchNumber: n});
-                    this.setState({initializeCount: num});
-                    this.setConverter(num);
+                    if (num) {
+                        this.setState({searchNumber: n});
+                        this.setState({initializeCount: num});
+                        this.setConverter(num);
+                    } else {
+                        this.setState({searchNumber: ""}); // this is for if u want to clear whole inputtext
+                        this.setConverter(this.state.initializeCount);
+                    }
                 } else {
-                    this.setState({searchNumber: ""}); // this is for if u want to clear whole inputtext
-                    this.setConverter(this.state.initializeCount);
+                    ToastAndroid.show(
+                        'You have exceeded the limit!',
+                        ToastAndroid.SHORT
+                    );
                 }
             }else{
                 ToastAndroid.show(
-                    'You have exceeded the limit!',
+                    'Enter number only in integer!',
                     ToastAndroid.SHORT
-                );
+                )
             }
         }else{
             ToastAndroid.show(
@@ -300,6 +311,27 @@ export default class App extends Component<{}> {
         this.setState({initializeHindi: hi});
     }
 
+    responsiveAudio = () => {
+        NetInfo.isConnected.fetch().then(isConnected => {
+            if(isConnected) {
+                hindiWords = this.state.initializeHindi.replace(/\s/g,'%20');
+                console.log(hindiWords)
+                ToastAndroid.show(
+                    'Wait! translating into hindi...',
+                    ToastAndroid.SHORT
+                );
+                AudioPlayer.prepare(`https://www.google.com/speech-api/v1/synthesize?ie=UTF-8&text=${this.state.initializeHindi.replace(/\s/g,'%20')}&lang=hi-IN`, () => {
+                    AudioPlayer.play();
+                })
+            }else{
+                ToastAndroid.show(
+                    'Internet not available. Please! Turn on your internet!!!',
+                    ToastAndroid.SHORT
+                );
+            }
+        })
+    }
+
     render() {
         return (
             <ScrollView style={styles.container} keyboardShouldPersistTaps='always' >
@@ -335,7 +367,7 @@ export default class App extends Component<{}> {
                                             <View style={{flex:1, flexDirection:'column'}}>
                                                 <View style={[styles.justifyAlign,{marginTop: 8, width: width*0.90, marginLeft: 5}]}>
                                                    <Text style={[styles.aboutApp,{fontSize: 30 }]}>About 30 App</Text>
-                                                   <Text style={[styles.aboutApp,{fontSize: 16, marginTop: 15, marginLeft: 10 }]}>30 is a counting app which translates numbers into words (English & Hindi). Here counting begins from 30 to 1 trillion.</Text>
+                                                   <Text style={[styles.aboutApp,{fontSize: 16, marginTop: 15, marginLeft: 10 }]}>30 is a counting app which translates numbers into words (English & Hindi). Here counting begins from 30 to 99 trillion.</Text>
                                                 </View>
                                                 <View style={{marginLeft: 10,flexDirection: 'column', marginTop: 25}}>
                                                     <View style={{flexDirection: 'row'}}>
@@ -454,14 +486,21 @@ export default class App extends Component<{}> {
                                 <Text style={{fontSize: 18, textAlign:"center",textAlignVertical:"center", color: '#C01d72', fontFamily: 'Lato-Regular', marginBottom: 5}}>English</Text>
                                 <TouchableWithoutFeedback onPress={() => Tts.speak(this.state.initializeEnglish)  }>
                                     <View>
-                                        <Image style={{width: 20, height: 20, marginLeft: 5, marginBottom: 2}} source={require('./assets/images/voice.png')} />
+                                        <Image style={{width: 21, height: 20, marginLeft: 5, marginBottom: 3}} source={require('./assets/images/voice.png')} />
                                     </View>
                                 </TouchableWithoutFeedback>
                             </View>
                             <Text style={{fontSize: 15,paddingLeft: 15, paddingRight: 15, textAlign:"center",textAlignVertical:"center", color: '#7D7D7D', fontFamily: 'Lato-Bold'}}>{this.state.initializeEnglish}</Text>
                         </View>
                         <View style={{width,height: height*0.23}}>
-                            <Text style={{fontSize: 18, textAlign:"center",textAlignVertical:"center", color: '#014d88', fontFamily: 'NotoSans-Regular',marginBottom: 5}}>हिन्दी</Text>
+                            <View style={{width,height: height*0.05,flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
+                                <Text style={{fontSize: 18, textAlign:"center",textAlignVertical:"center", color: '#014d88', fontFamily: 'NotoSans-Regular',marginBottom: 5}}>हिन्दी</Text>
+                                <TouchableWithoutFeedback onPress={() => this.responsiveAudio() }>
+                                    <View>
+                                        <Image style={{width: 21, height: 20, marginLeft: 5, marginBottom: 6}} source={require('./assets/images/voice.png')} />
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            </View>
                             <Text style={{fontSize: 15, paddingLeft: 15, paddingRight: 15 ,textAlign:"center",textAlignVertical:"center", color: '#7D7D7D', fontFamily: 'Lato-Bold'}}>{this.state.initializeHindi}</Text>
                         </View>
                         <View style={{width,height: height*0.08,flexDirection: 'row', justifyContent: 'center'}} >
@@ -489,7 +528,7 @@ export default class App extends Component<{}> {
                     <View style={{height: height*0.19, width}}>
                         <AdMobBanner
                         adSize="smartBannerPortrait"
-                        adUnitID="ca-app-pub-8354628535093380/4181340672"
+                        adUnitID="ca-app-pub-4132894286898630/1313361492"
                         didFailToReceiveAdWithError={this.bannerError} /></View>
                 </ImageBackground>
             </ScrollView>

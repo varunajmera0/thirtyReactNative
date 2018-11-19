@@ -101,8 +101,8 @@ android {
         applicationId "com.thirty"
         minSdkVersion 16
         targetSdkVersion 22
-        versionCode 4
-        versionName "2.0.2"
+        versionCode 6
+        versionName "2.0.4"
         ndk {
             abiFilters "armeabi-v7a", "x86"
         }
@@ -146,6 +146,7 @@ android {
 }
 
 dependencies {
+    compile project(':react-native-play-audio')
     compile project(':react-native-admob')
     compile project(':react-native-tts')
     compile fileTree(dir: "libs", include: ["*.jar"])
